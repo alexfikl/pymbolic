@@ -30,45 +30,63 @@ import pymbolic.mapper
 import pymbolic.mapper.evaluator
 
 
-def map_math_functions_by_name(i, func, pars, allowed_nonsmoothness="none"):
-    def make_f(name):
-        return primitives.Lookup(primitives.Variable("math"), name)
+def map_math_functions_by_name(
+        i, func, parameters, *,
+        allowed_nonsmoothness="none",
+        module=None):
+    if module is None:
+        module = pymbolic.functions
 
-    if func == make_f("sin") and len(pars) == 1:
-        return make_f("cos")(*pars)
-    elif func == make_f("cos") and len(pars) == 1:
-        return -make_f("sin")(*pars)
-    elif func == make_f("tan") and len(pars) == 1:
-        return make_f("tan")(*pars)**2+1
-    elif func == make_f("log") and len(pars) == 1:
-        return primitives.quotient(1, pars[0])
-    elif func == make_f("exp") and len(pars) == 1:
-        return make_f("exp")(*pars)
-    elif func == make_f("sinh") and len(pars) == 1:
-        return make_f("cosh")(*pars)
-    elif func == make_f("cosh") and len(pars) == 1:
-        return make_f("sinh")(*pars)
-    elif func == make_f("tanh") and len(pars) == 1:
-        return 1-make_f("tanh")(*pars)**2
-    elif func == make_f("expm1") and len(pars) == 1:
-        return make_f("exp")(*pars)
-    elif func == make_f("fabs") and len(pars) == 1:
+    module_call = module.sin(1)
+    if not (isinstance(module_call, primitives.Call)
+            and isinstance(func, type(module_call.function))):
+        raise TypeError(f"cannot differentiate unrecognized function: {func!r}")
+
+    if func.name == "sin":
+        assert len(parameters) == 1
+        return module.cos(*parameters)
+    elif func.name == "cos":
+        assert len(parameters) == 1
+        return -module.sin(*parameters)
+    elif func.name == "tan":
+        assert len(parameters) == 1
+        return module.tan(*parameters)**2 + 1
+    elif func.name == "log":
+        assert len(parameters) == 1
+        return 1 / parameters[0]
+    elif func.name == "exp":
+        assert len(parameters) == 1
+        return module.exp(*parameters)
+    elif func.name == "sinh":
+        assert len(parameters) == 1
+        return module.cosh(*parameters)
+    elif func.name == "cosh":
+        assert len(parameters) == 1
+        return module.sinh(*parameters)
+    elif func.name == "tanh":
+        assert len(parameters) == 1
+        return 1 - module.tanh(*parameters)**2
+    elif func.name == "expm1":
+        assert len(parameters) == 1
+        return module.exp(*parameters)
+    elif func.name == "fabs":
+        assert len(parameters) == 1
         if allowed_nonsmoothness in ["continuous", "discontinuous"]:
-            from pymbolic.functions import sign
-            return sign(*pars)
+            return module.sign(*parameters)
         else:
-            raise ValueError("fabs is not smooth"
-                             ", pass allowed_nonsmoothness='continuous' "
-                             "to return sign")
-    elif func == make_f("copysign") and len(pars) == 2:
+            raise ValueError(
+                    "'fab's is not smooth, pass allowed_nonsmoothness='continuous' "
+                    "to return 'sign'")
+    elif func.name == "copysign":
+        assert len(parameters) == 2
         if allowed_nonsmoothness == "discontinuous":
             return 0
         else:
-            raise ValueError("sign is discontinuous"
-                             ", pass allowed_nonsmoothness='discontinuous' "
-                             "to return 0")
+            raise ValueError(
+                    "'sign' is discontinuous, pass "
+                    "allowed_nonsmoothness='discontinuous' to return '0'")
     else:
-        raise RuntimeError("unrecognized function, cannot differentiate")
+        raise ValueError(f"cannot differentiate unknown function: '{func.name}'")
 
 
 class DifferentiationMapper(pymbolic.mapper.RecursiveMapper,
