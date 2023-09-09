@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from typing import Union, Mapping, Type, Optional, Callable, Any, Tuple
+from typing import Union, Mapping, Type, Optional, Callable, Any, Tuple, ClassVar
 from sys import intern
 import pymbolic.traits as traits
 from warnings import warn
@@ -841,17 +841,19 @@ class Variable(Leaf):
     """
     .. attribute:: name
     """
+    __slots__ = ("name",)
+
     name: str
 
     # FIXME: Missing intern(): does it matter?
 
-    mapper_method = intern("map_variable")
+    mapper_method: ClassVar[str] = intern("map_variable")
 
 
 @augment_expression_dataclass
 @dataclass(frozen=True, repr=False)
 class Wildcard(Leaf):
-    mapper_method = intern("map_wildcard")
+    mapper_method: ClassVar[str] = intern("map_wildcard")
 
 
 @augment_expression_dataclass
@@ -860,9 +862,11 @@ class DotWildcard(Leaf):
     """
     A wildcard that can be substituted for a single expression.
     """
+    __slots__ = ("name",)
+
     name: str
 
-    mapper_method = intern("map_dot_wildcard")
+    mapper_method: ClassVar[str] = intern("map_dot_wildcard")
 
 
 @augment_expression_dataclass
@@ -872,9 +876,11 @@ class StarWildcard(Leaf):
     A wildcard that can be substituted by a sequence of expressions of
     non-negative length.
     """
+    __slots__ = ("name",)
+
     name: str
 
-    mapper_method = intern("map_star_wildcard")
+    mapper_method: ClassVar[str] = intern("map_star_wildcard")
 
 
 @augment_expression_dataclass
@@ -885,8 +891,7 @@ class FunctionSymbol(AlgebraicLeaf):
     May optionally have an `arg_count` attribute, which will
     allow `Call` to check the number of arguments.
     """
-
-    mapper_method = intern("map_function_symbol")
+    mapper_method: ClassVar[str] = intern("map_function_symbol")
 
 
 # {{{ structural primitives
@@ -906,10 +911,12 @@ class Call(AlgebraicLeaf):
         of which is a :class:`Expression` or a constant.
 
     """
+    __slots__ = ("function", "parameters")
+
     function: ExpressionT
     parameters: Tuple[ExpressionT, ...]
 
-    mapper_method = intern("map_call")
+    mapper_method: ClassVar[str] = intern("map_call")
 
 
 @augment_expression_dataclass
@@ -933,12 +940,13 @@ class CallWithKwargs(AlgebraicLeaf):
         or an equivalent value accepted by the :class:`dict`
         constructor.
     """
+    __slots__ = ("function", "parameters", "kw_parameters")
 
     function: ExpressionT
     parameters: Tuple[ExpressionT, ...]
     kw_parameters: Mapping[str, ExpressionT]
 
-    mapper_method = intern("map_call_with_kwargs")
+    mapper_method: ClassVar[str] = intern("map_call_with_kwargs")
 
 
 @augment_expression_dataclass
@@ -953,6 +961,8 @@ class Subscript(AlgebraicLeaf):
         Return :attr:`index` wrapped in a single-element tuple, if it is not already
         a tuple.
     """
+    __slots__ = ("aggregate", "index")
+
     aggregate: ExpressionT
     index: ExpressionT
 
@@ -963,7 +973,7 @@ class Subscript(AlgebraicLeaf):
         else:
             return (self.index,)
 
-    mapper_method = intern("map_subscript")
+    mapper_method: ClassVar[str] = intern("map_subscript")
 
 
 @augment_expression_dataclass
@@ -972,11 +982,12 @@ class Lookup(AlgebraicLeaf):
     """Access to an attribute of an *aggregate*, such as an
     attribute of a class.
     """
+    __slots__ = ("aggregate", "name")
 
     aggregate: ExpressionT
     name: str
 
-    mapper_method = intern("map_lookup")
+    mapper_method: ClassVar[str] = intern("map_lookup")
 
 # }}}
 
@@ -991,6 +1002,7 @@ class Sum(Expression):
 
         A :class:`tuple`.
     """
+    __slots__ = ("children",)
 
     children: Tuple[ExpressionT, ...]
 
@@ -1033,7 +1045,7 @@ class Sum(Expression):
 
     __nonzero__ = __bool__
 
-    mapper_method = intern("map_sum")
+    mapper_method: ClassVar[str] = intern("map_sum")
 
 
 @augment_expression_dataclass
@@ -1044,6 +1056,7 @@ class Product(Expression):
 
         A :class:`tuple`.
     """
+    __slots__ = ("children",)
 
     children: Tuple[ExpressionT, ...]
 
@@ -1077,12 +1090,14 @@ class Product(Expression):
 
     __nonzero__ = __bool__
 
-    mapper_method = intern("map_product")
+    mapper_method: ClassVar[str] = intern("map_product")
 
 
 @augment_expression_dataclass
 @dataclass(frozen=True, repr=False)
 class QuotientBase(Expression):
+    __slots__ = ("numerator", "denominator")
+
     numerator: ExpressionT
     denominator: ExpressionT
 
@@ -1108,7 +1123,7 @@ class Quotient(QuotientBase):
     .. attribute:: denominator
     """
 
-    mapper_method = intern("map_quotient")
+    mapper_method: ClassVar[str] = intern("map_quotient")
 
 
 @augment_expression_dataclass
@@ -1119,7 +1134,7 @@ class FloorDiv(QuotientBase):
     .. attribute:: denominator
     """
 
-    mapper_method = intern("map_floor_div")
+    mapper_method: ClassVar[str] = intern("map_floor_div")
 
 
 @augment_expression_dataclass
@@ -1130,7 +1145,7 @@ class Remainder(QuotientBase):
     .. attribute:: denominator
     """
 
-    mapper_method = intern("map_remainder")
+    mapper_method: ClassVar[str] = intern("map_remainder")
 
 
 @augment_expression_dataclass
@@ -1140,11 +1155,12 @@ class Power(Expression):
     .. attribute:: base
     .. attribute:: exponent
     """
+    __slots__ = ("base", "exponent")
 
     base: ExpressionT
     exponent: ExpressionT
 
-    mapper_method = intern("map_power")
+    mapper_method: ClassVar[str] = intern("map_power")
 
 # }}}
 
@@ -1154,6 +1170,8 @@ class Power(Expression):
 @augment_expression_dataclass
 @dataclass(frozen=True, repr=False)
 class _ShiftOperator(Expression):
+    __slots__ = ("shiftee", "shift")
+
     shiftee: ExpressionT
     shift: ExpressionT
 
@@ -1166,7 +1184,7 @@ class LeftShift(_ShiftOperator):
     .. attribute:: shift
     """
 
-    mapper_method = intern("map_left_shift")
+    mapper_method: ClassVar[str] = intern("map_left_shift")
 
 
 @augment_expression_dataclass
@@ -1177,7 +1195,7 @@ class RightShift(_ShiftOperator):
     .. attribute:: shift
     """
 
-    mapper_method = intern("map_right_shift")
+    mapper_method: ClassVar[str] = intern("map_right_shift")
 
 # }}}
 
@@ -1190,10 +1208,11 @@ class BitwiseNot(Expression):
     """
     .. attribute:: child
     """
+    __slots__ = ("child",)
 
     child: ExpressionT
 
-    mapper_method = intern("map_bitwise_not")
+    mapper_method: ClassVar[str] = intern("map_bitwise_not")
 
 
 @augment_expression_dataclass
@@ -1204,10 +1223,11 @@ class BitwiseOr(Expression):
 
         A :class:`tuple`.
     """
+    __slots__ = ("children",)
 
     children: Tuple[ExpressionT, ...]
 
-    mapper_method = intern("map_bitwise_or")
+    mapper_method: ClassVar[str] = intern("map_bitwise_or")
 
 
 @augment_expression_dataclass
@@ -1218,9 +1238,11 @@ class BitwiseXor(Expression):
 
         A :class:`tuple`.
     """
+    __slots__ = ("children",)
+
     children: Tuple[ExpressionT, ...]
 
-    mapper_method = intern("map_bitwise_xor")
+    mapper_method: ClassVar[str] = intern("map_bitwise_xor")
 
 
 @augment_expression_dataclass
@@ -1231,9 +1253,11 @@ class BitwiseAnd(Expression):
 
         A :class:`tuple`.
     """
+    __slots__ = ("children",)
+
     children: Tuple[ExpressionT, ...]
 
-    mapper_method = intern("map_bitwise_and")
+    mapper_method: ClassVar[str] = intern("map_bitwise_and")
 
 # }}}
 
@@ -1259,12 +1283,13 @@ class Comparison(Expression):
     .. attribute:: operator_to_name
     .. attribute:: name_to_operator
     """
+    __slots__ = ("left", "operator", "right")
 
     left: ExpressionT
     operator: str
     right: ExpressionT
 
-    operator_to_name = {
+    operator_to_name: ClassVar[Mapping[str, str]] = {
             "==": "eq",
             "!=": "ne",
             ">=": "ge",
@@ -1272,7 +1297,9 @@ class Comparison(Expression):
             "<=": "le",
             "<": "lt",
             }
-    name_to_operator = {name: op for op, name in operator_to_name.items()}
+    name_to_operator: ClassVar[Mapping[str, str]] = {
+        name: op for op, name in operator_to_name.items()
+        }
 
     def __post_init__(self):
         # FIXME Yuck, gross
@@ -1289,7 +1316,7 @@ class Comparison(Expression):
             else:
                 raise RuntimeError(f"invalid operator: '{self.operator}'")
 
-    mapper_method = intern("map_comparison")
+    mapper_method: ClassVar[str] = intern("map_comparison")
 
 
 @augment_expression_dataclass
@@ -1298,10 +1325,11 @@ class LogicalNot(Expression):
     """
     .. attribute:: child
     """
+    __slots__ = ("child",)
 
     child: ExpressionT
 
-    mapper_method = intern("map_logical_not")
+    mapper_method: ClassVar[str] = intern("map_logical_not")
 
 
 @augment_expression_dataclass
@@ -1312,10 +1340,11 @@ class LogicalOr(Expression):
 
         A :class:`tuple`.
     """
+    __slots__ = ("children",)
 
     children: Tuple[ExpressionT, ...]
 
-    mapper_method = intern("map_logical_or")
+    mapper_method: ClassVar = intern("map_logical_or")
 
 
 @augment_expression_dataclass
@@ -1326,9 +1355,11 @@ class LogicalAnd(Expression):
 
         A :class:`tuple`.
     """
+    __slots__ = ("children",)
+
     children: Tuple[ExpressionT, ...]
 
-    mapper_method = intern("map_logical_and")
+    mapper_method: ClassVar[str] = intern("map_logical_and")
 
 
 @augment_expression_dataclass
@@ -1339,12 +1370,13 @@ class If(Expression):
     .. attribute:: then
     .. attribute:: else_
     """
+    __slots__ = ("condition", "then", "else_")
 
     condition: ExpressionT
     then: ExpressionT
     else_: ExpressionT
 
-    mapper_method = intern("map_if")
+    mapper_method: ClassVar[str] = intern("map_if")
 
 
 @augment_expression_dataclass
@@ -1355,9 +1387,11 @@ class Min(Expression):
 
         A :class:`tuple`.
     """
+    __slots__ = ("children",)
+
     children: Tuple[ExpressionT, ...]
 
-    mapper_method = intern("map_min")
+    mapper_method: ClassVar[str] = intern("map_min")
 
 
 @augment_expression_dataclass
@@ -1368,9 +1402,11 @@ class Max(Expression):
 
         A :class:`tuple`.
     """
+    __slots__ = ("children",)
+
     children: Tuple[ExpressionT, ...]
 
-    mapper_method = intern("map_max")
+    mapper_method: ClassVar[str] = intern("map_max")
 
 # }}}
 
@@ -1416,16 +1452,17 @@ class CommonSubexpression(Expression):
 
     See :class:`pymbolic.mapper.c_code.CCodeMapper` for an example.
     """
+    __slots__ = ("child", "prefix", "scope")
 
     child: ExpressionT
-    prefix: Optional[str] = None
-    scope: str = cse_scope.EVALUATION
+    prefix: Optional[str]
+    scope: Optional[str]
 
     def __post_init__(self):
         if self.scope is None:
             warn("CommonSubexpression.scope set to None. "
                  "This is deprecated and will stop working in 2024. "
-                "Use cse_scope.EVALUATION explicitly instead.",
+                 "Use cse_scope.EVALUATION explicitly instead.",
                  DeprecationWarning, stacklevel=3)
             object.__setattr__(self, "scope", cse_scope.EVALUATION)
 
@@ -1439,36 +1476,48 @@ class CommonSubexpression(Expression):
 
         return {}
 
-    mapper_method = intern("map_common_subexpression")
+    mapper_method: ClassVar[str] = intern("map_common_subexpression")
+
+
+def cse(child: ExpressionT,
+        prefix: Optional[str] = None,
+        scope: Optional[str] = None) -> CommonSubexpression:
+    if scope is None:
+        scope = cse_scope.EVALUATION
+
+    return CommonSubexpression(child=child, prefix=prefix, scope=scope)
 
 
 @augment_expression_dataclass
 @dataclass(frozen=True, repr=False)
 class Substitution(Expression):
     """Work-alike of sympy's Subs."""
+    __slots__ = ("child", "variables", "values")
 
     child: ExpressionT
     variables: Tuple[str, ...]
     values: Tuple[ExpressionT, ...]
 
-    mapper_method = intern("map_substitution")
+    mapper_method: ClassVar[str] = intern("map_substitution")
 
 
 @augment_expression_dataclass
 @dataclass(frozen=True, repr=False)
 class Derivative(Expression):
     """Work-alike of sympy's Derivative."""
+    __slots__ = ("child", "variables")
 
     child: ExpressionT
     variables: Tuple[str, ...]
 
-    mapper_method = intern("map_derivative")
+    mapper_method: ClassVar[str] = intern("map_derivative")
 
 
 @augment_expression_dataclass
 @dataclass(frozen=True, repr=False)
 class Slice(Expression):
     """A slice expression as in a[1:7]."""
+    __slots__ = ("children",)
 
     children: Union[
             Tuple[()],
@@ -1505,7 +1554,7 @@ class Slice(Expression):
         else:
             return None
 
-    mapper_method = intern("map_slice")
+    mapper_method: ClassVar[str] = intern("map_slice")
 
 
 @augment_expression_dataclass
@@ -1531,9 +1580,11 @@ class NaN(Expression):
         type.  It must also be suitable for use as the second argument of
         :func:`isinstance`.
     """
-    data_type: Optional[Callable[[float], Any]] = None
+    __slots__ = ("data_type",)
 
-    mapper_method = intern("map_nan")
+    data_type: Optional[Callable[[float], Any]]
+
+    mapper_method: ClassVar[str] = intern("map_nan")
 
 # }}}
 
@@ -1701,13 +1752,13 @@ def wrap_in_cse(expr, prefix=None):
         if prefix is None:
             return expr
         if expr.prefix is None and type(expr) is CommonSubexpression:
-            return CommonSubexpression(expr.child, prefix)
+            return cse(expr.child, prefix)
 
         # existing prefix wins
         return expr
 
     else:
-        return CommonSubexpression(expr, prefix)
+        return cse(expr, prefix)
 
 
 def make_common_subexpression(field, prefix=None, scope=None):
